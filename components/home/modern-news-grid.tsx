@@ -20,7 +20,7 @@ export function ModernNewsGrid() {
         const posts = await getNewsPosts(6); // Get latest 6 articles
         setLatestArticles(posts);
       } catch (error) {
-        console.warn('Sanity data unavailable, using fallback:', error);
+        console.error('Error fetching articles:', error);
         setLatestArticles([]);
       } finally {
         setIsLoading(false);

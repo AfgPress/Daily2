@@ -1,14 +1,13 @@
 import {defineConfig} from 'sanity'
 import {structureTool} from 'sanity/structure'
 import {visionTool} from '@sanity/vision'
-import {cloudinarySchemaPlugin} from 'sanity-plugin-cloudinary'   // ✅ add this
 import {schemaTypes} from './schemaTypes'
 
 export default defineConfig({
   name: 'default',
   title: 'DailyCrypto',
 
-  projectId: 'uiu9mgqs',
+  projectId: 'qose90o2',
   dataset: 'production',
 
   plugins: [
@@ -24,9 +23,9 @@ export default defineConfig({
                 S.documentTypeList('newsPost')
                   .title('News Posts')
                   .filter('_type == "newsPost"')
-                  .defaultOrdering([{ field: 'datePublished', direction: 'desc' }])
+                  .defaultOrdering([{field: 'datePublished', direction: 'desc'}])
               ),
-
+            
             // Daily Content
             S.listItem()
               .title('Daily Recaps')
@@ -34,9 +33,9 @@ export default defineConfig({
                 S.documentTypeList('dailyRecap')
                   .title('Daily Recaps')
                   .filter('_type == "dailyRecap"')
-                  .defaultOrdering([{ field: 'date', direction: 'desc' }])
+                  .defaultOrdering([{field: 'date', direction: 'desc'}])
               ),
-
+            
             // Weekly Content
             S.listItem()
               .title('Weekly Summaries')
@@ -44,9 +43,10 @@ export default defineConfig({
                 S.documentTypeList('weeklySummary')
                   .title('Weekly Summaries')
                   .filter('_type == "weeklySummary"')
-                  .defaultOrdering([{ field: 'weekStartDate', direction: 'desc' }])
+                  .defaultOrdering([{field: 'weekStartDate', direction: 'desc'}])
               ),
-
+            
+            // Market Analysis
             // Archives
             S.listItem()
               .title('Archives')
@@ -54,11 +54,11 @@ export default defineConfig({
                 S.documentTypeList('archive')
                   .title('Archives')
                   .filter('_type == "archive"')
-                  .defaultOrdering([{ field: 'date', direction: 'desc' }])
+                  .defaultOrdering([{field: 'date', direction: 'desc'}])
               ),
-
+            
             S.divider(),
-
+            
             // Reference Data
             S.listItem()
               .title('Authors')
@@ -67,7 +67,7 @@ export default defineConfig({
                   .title('Authors')
                   .filter('_type == "author"')
               ),
-
+            
             S.listItem()
               .title('Categories')
               .child(
@@ -77,8 +77,7 @@ export default defineConfig({
               ),
           ])
     }),
-    visionTool(),
-    cloudinarySchemaPlugin()   // ✅ enable Cloudinary custom type: cloudinary.asset
+    visionTool()
   ],
 
   schema: {

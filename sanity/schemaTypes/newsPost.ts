@@ -13,7 +13,10 @@ export default {
       name: 'slug',
       title: 'Slug',
       type: 'slug',
-      options: { source: 'title', maxLength: 96 },
+      options: {
+        source: 'title',
+        maxLength: 96
+      },
       validation: (Rule: any) => Rule.required()
     },
     {
@@ -56,8 +59,16 @@ export default {
                 type: 'object',
                 title: 'Link',
                 fields: [
-                  { name: 'href', type: 'url', title: 'URL' },
-                  { name: 'blank', type: 'boolean', title: 'Open in new tab' }
+                  {
+                    name: 'href',
+                    type: 'url',
+                    title: 'URL'
+                  },
+                  {
+                    name: 'blank',
+                    type: 'boolean',
+                    title: 'Open in new tab'
+                  }
                 ]
               }
             ]
@@ -67,8 +78,16 @@ export default {
           type: 'image',
           options: { hotspot: true },
           fields: [
-            { name: 'alt', type: 'string', title: 'Alternative text' },
-            { name: 'caption', type: 'string', title: 'Caption' }
+            {
+              name: 'alt',
+              type: 'string',
+              title: 'Alternative text'
+            },
+            {
+              name: 'caption',
+              type: 'string',
+              title: 'Caption'
+            }
           ]
         }
       ],
@@ -77,8 +96,10 @@ export default {
     {
       name: 'coverImage',
       title: 'Cover Image',
-      type: 'cloudinary.asset',       // ✅ Cloudinary field
-      description: 'Upload or select an image from your Cloudinary account',
+      type: 'image',
+      options: {
+        hotspot: true
+      },
       validation: (Rule: any) => Rule.required()
     },
     {
@@ -100,14 +121,18 @@ export default {
       title: 'Tags',
       type: 'array',
       of: [{ type: 'string' }],
-      options: { layout: 'tags' }
+      options: {
+        layout: 'tags'
+      }
     },
     {
       name: 'tickers',
       title: 'Related Crypto Tickers',
       type: 'array',
       of: [{ type: 'string' }],
-      options: { layout: 'tags' },
+      options: {
+        layout: 'tags'
+      },
       description: 'Cryptocurrency symbols mentioned in the article (e.g., BTC, ETH)'
     },
     {
@@ -222,10 +247,15 @@ export default {
           title: 'Keywords',
           type: 'array',
           of: [{ type: 'string' }],
-          options: { layout: 'tags' }
+          options: {
+            layout: 'tags'
+          }
         }
       ],
-      options: { collapsible: true, collapsed: true }
+      options: {
+        collapsible: true,
+        collapsed: true
+      }
     }
   ],
   orderings: [
@@ -257,12 +287,12 @@ export default {
       featured: 'featured'
     },
     prepare(selection: any) {
-      const { title, subtitle, media, category, featured } = selection
+      const { title, subtitle, media, category, featured } = selection;
       return {
-        title,
+        title: title,
         subtitle: `${subtitle} • ${category}${featured ? ' • Featured' : ''}`,
-        media
-      }
+        media: media
+      };
     }
   }
 }
