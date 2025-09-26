@@ -11,20 +11,31 @@ import { NewsletterCTASection } from "@/components/home/newsletter-cta-section";
 import { TrendingTopicsSection } from "@/components/home/trending-topics-section";
 import { QuickStatsSection } from "@/components/home/quick-stats-section";
 import { useCryptoPrices } from "@/hooks/use-crypto-prices";
-import { mockNewsPosts } from "@/lib/content.mock";
+import { getNewsPosts, SanityNewsPost, getImageUrl } from "@/lib/sanity";
 
 export default function ClientHomePage() {
   const { data: priceTickers } = useCryptoPrices();
-  const [newsPosts, setNewsPosts] = useState(mockNewsPosts);
-  const [isLoading, setIsLoading] = useState(false);
+  const [newsPosts, setNewsPosts] = useState<SanityNewsPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Use mock data for now
+  // Fetch news posts from Sanity
   useEffect(() => {
-    setNewsPosts(mockNewsPosts);
-    setIsLoading(false);
-  }, []);
+    const fetchNewsPosts = async () => {
+      try {
+        const posts = await getNewsPosts(10); // Get latest 10 posts
+        setNewsPosts(posts);
+      } catch (error) {
+        console.warn('Sanity data unavailable, using fallback:', error);
+        // Fallback to empty array if Sanity fails
+        setNewsPosts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Get articles from mock data
+    fetchNewsPosts();
+  }, []);
+  // Get articles from Sanity data
   const featuredArticles = newsPosts.filter(post => post.featured);
   const regularArticles = newsPosts.filter(post => !post.featured);
   
@@ -36,25 +47,25 @@ export default function ClientHomePage() {
 
   // Transform articles to match hero section format
   const transformedFeaturedArticle = featuredArticle ? {
-    id: featuredArticle.id,
+    id: featuredArticle._id,
     title: featuredArticle.title,
     excerpt: featuredArticle.description,
     author: featuredArticle.author?.name || 'DailyCrypto Team',
     publishedAt: featuredArticle.datePublished,
-    category: featuredArticle.category || 'News',
-    imageUrl: featuredArticle.coverImage || 'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=800',
-    slug: featuredArticle.slug || ''
+    category: featuredArticle.category?.name || 'News',
+    imageUrl: featuredArticle.coverImage ? getImageUrl(featuredArticle.coverImage, 800, 600) : 'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=800',
+    slug: featuredArticle.slug?.current || ''
   } : null;
 
   const transformedSecondaryArticles = secondaryArticles.map(article => ({
-    id: article.id,
+    id: article._id,
     title: article.title,
     excerpt: article.description,
     author: article.author?.name || 'DailyCrypto Team',
     publishedAt: article.datePublished,
-    category: article.category || 'News',
-    imageUrl: article.coverImage || 'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=600',
-    slug: article.slug || ''
+    category: article.category?.name || 'News',
+    imageUrl: article.coverImage ? getImageUrl(article.coverImage, 600, 400) : 'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=600',
+    slug: article.slug?.current || ''
   }));
 
   // Transform crypto data to match hero section format
