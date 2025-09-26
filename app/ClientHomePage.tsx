@@ -25,7 +25,7 @@ export default function ClientHomePage() {
         const posts = await getNewsPosts(10); // Get latest 10 posts
         setNewsPosts(posts);
       } catch (error) {
-        console.warn('Sanity data unavailable, using fallback:', error);
+        console.error('Error fetching news posts:', error);
         // Fallback to empty array if Sanity fails
         setNewsPosts([]);
       } finally {

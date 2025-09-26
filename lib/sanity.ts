@@ -132,7 +132,7 @@ export async function getNewsPosts(limit: number = 50, featured?: boolean): Prom
     const posts = await client.fetch(query)
     return posts || []
   } catch (error) {
-    console.warn('Sanity API unavailable, using fallback data:', error)
+    console.error('Error fetching news posts:', error)
     return []
   }
 }
@@ -151,7 +151,7 @@ export async function getNewsPostBySlug(slug: string): Promise<SanityNewsPost | 
     const post = await client.fetch(query, { slug })
     return post || null
   } catch (error) {
-    console.warn('Sanity API unavailable for slug fetch:', error)
+    console.error('Error fetching news post by slug:', error)
     return null
   }
 }

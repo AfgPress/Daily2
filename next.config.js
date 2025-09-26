@@ -8,7 +8,10 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: { unoptimized: true },
-  serverExternalPackages: ['sanity'],
+  experimental: {
+    esmExternals: 'loose',
+    serverComponentsExternalPackages: ['sanity']
+  },
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
