@@ -6,28 +6,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, User, Eye, ChevronRight, Star, Zap } from 'lucide-react';
-import { getNewsPosts, SanityNewsPost, getImageUrl } from '@/lib/sanity';
+import { mockNewsPosts } from '@/lib/content.mock';
 import { ClientRelativeTime } from '@/components/ui/client-relative-time';
 
 export function ModernNewsGrid() {
-  const [latestArticles, setLatestArticles] = useState<SanityNewsPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [latestArticles, setLatestArticles] = useState(mockNewsPosts);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch latest articles from Sanity
+  // Use mock data for now
   useEffect(() => {
-    const fetchArticles = async () => {
-      try {
-        const posts = await getNewsPosts(6); // Get latest 6 articles
-        setLatestArticles(posts);
-      } catch (error) {
-        console.error('Error fetching articles:', error);
-        setLatestArticles([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchArticles();
+    setLatestArticles(mockNewsPosts.slice(0, 6));
+    setIsLoading(false);
   }, []);
 
   if (isLoading) {
@@ -84,11 +73,11 @@ export function ModernNewsGrid() {
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Featured Analysis */}
         {latestArticles.length > 0 && (
-          <Link href={`/news/${latestArticles[0].slug?.current}`}>
+          <Link href={`/news/${latestArticles[0].slug}`}>
             <Card className="group overflow-hidden rounded-2xl bg-[var(--color-surface)] hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-[var(--color-muted-subtle)] h-full relative">
               <div className="relative h-full min-h-[400px] overflow-hidden">
                 <Image
-                  src={latestArticles[0].coverImage ? getImageUrl(latestArticles[0].coverImage, 800, 600) : 'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=800'}
+                  src={latestArticles[0].coverImage || 'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=800'}
                   alt={latestArticles[0].title}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -108,7 +97,7 @@ export function ModernNewsGrid() {
                 {/* Category Badge */}
                 <div className="absolute top-4 right-4">
                   <Badge className="bg-[var(--color-primary-brand)] text-white shadow-lg">
-                    {latestArticles[0].category?.name || 'News'}
+                    {latestArticles[0].category || 'News'}
                   </Badge>
                 </div>
 
@@ -147,14 +136,14 @@ export function ModernNewsGrid() {
         {/* Regular Featured Stories */}
         <div className="space-y-6">
           {latestArticles.slice(1, 4).map((article) => (
-            <Link key={article._id} href={`/news/${article.slug?.current}`}>
+            <Link key={article.id} href={`/news/${article.slug}`}>
               <Card className="group overflow-hidden rounded-xl bg-[var(--color-surface)] hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-[var(--color-muted-subtle)]">
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
                     {/* Author Avatar */}
                     <div className="relative w-12 h-12 flex-shrink-0 overflow-hidden rounded-xl">
                       <Image
-                        src={article.author?.avatar ? getImageUrl(article.author.avatar, 48, 48) : 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=48'}
+                        src={article.author?.avatar || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=48'}
                         alt={article.author?.name || 'Author'}
                         fill
                         className="object-cover"
@@ -166,7 +155,7 @@ export function ModernNewsGrid() {
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center space-x-2">
                         <Badge variant="outline" className="text-xs">
-                          {article.category?.name || 'News'}
+                          {article.category || 'News'}
                         </Badge>
                         <span className="text-xs text-[var(--color-text-secondary)]">
                           <ClientRelativeTime date={article.datePublished} />
