@@ -69,52 +69,9 @@ export interface SanityNewsPost {
 }
 
 // GROQ query fragments for reusability
-const newsPostFields = `
-  _id,
-  title,
-  slug,
-  description,
-  excerpt,
-  coverImage {
-    asset->{
-      _id,
-      url
-    },
-    alt
-  },
-  author->{
-    name,
-    bio,
-    avatar {
-      asset->{
-        _id,
-        url
-      }
-    },
-    role,
-    socials
-  },
-  category->{
-    name,
-    slug,
-    color
-  },
-  tags,
-  datePublished,
-  dateModified,
-  readingTime,
-  featured,
-  premium,
-  exclusive,
-  contentType,
-  impact,
-  language
-`
+const newsPostFields = `_id, title, slug, description, excerpt, coverImage { asset->{ _id, url }, alt }, author->{ name, bio, avatar { asset->{ _id, url } }, role, socials }, category->{ name, slug, color }, tags, datePublished, dateModified, readingTime, featured, premium, exclusive, contentType, impact, language`
 
-const newsPostFieldsWithContent = `
-  ${newsPostFields},
-  content
-`
+const newsPostFieldsWithContent = `${newsPostFields}, content`
 
 /**
  * Fetch all published news posts
