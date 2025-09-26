@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from 'react';
 import { AnimatedIndicatorNavbar } from "@/components/navbars/animated-indicator-navbar";
 import HeroNewsSection from "@/components/crypto/hero-news-section";
 import MarketTicker from "@/components/crypto/market-ticker";
@@ -11,62 +10,50 @@ import { NewsletterCTASection } from "@/components/home/newsletter-cta-section";
 import { TrendingTopicsSection } from "@/components/home/trending-topics-section";
 import { QuickStatsSection } from "@/components/home/quick-stats-section";
 import { useCryptoPrices } from "@/hooks/use-crypto-prices";
-import { getNewsPosts, SanityNewsPost, getImageUrl } from "@/lib/sanity";
+import { mockNewsPosts } from "@/lib/content.mock";
 
 export default function ClientHomePage() {
   const { data: priceTickers } = useCryptoPrices();
-  const [newsPosts, setNewsPosts] = useState<SanityNewsPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch news posts from Sanity
-  useEffect(() => {
-    const fetchNewsPosts = async () => {
-      try {
-        const posts = await getNewsPosts(10); // Get latest 10 posts
-        setNewsPosts(posts);
-      } catch (error) {
-        console.error('Error fetching news posts:', error);
-        // Fallback to empty array if Sanity fails
-        setNewsPosts([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNewsPosts();
-  }, []);
-  // Get articles from Sanity data
-  const featuredArticles = newsPosts.filter(post => post.featured);
-  const regularArticles = newsPosts.filter(post => !post.featured);
-  
-  // Use featured articles first, then regular articles as fallback
-  const featuredArticle = featuredArticles[0] || newsPosts[0];
-  const secondaryArticles = featuredArticles.slice(1, 3).length > 0 
-    ? featuredArticles.slice(1, 3) 
-    : newsPosts.slice(1, 4);
+  // Get articles from mock data
+  const featuredArticle = mockNewsPosts.find(post => post.slug === "bitcoin-surges-philippine-adoption");
+  const ethereumArticle = mockNewsPosts.find(post => post.slug === "ethereum-gas-fees-drop");
+  const bspArticle = mockNewsPosts.find(post => post.slug === "bsp-cbdc-guidelines-2025");
+  const tradingVolumeArticle = mockNewsPosts.find(post => post.slug === "philippines-crypto-trading-volume-record");
 
   // Transform articles to match hero section format
   const transformedFeaturedArticle = featuredArticle ? {
-    id: featuredArticle._id,
+    id: featuredArticle.id,
     title: featuredArticle.title,
     excerpt: featuredArticle.description,
-    author: featuredArticle.author?.name || 'DailyCrypto Team',
+    author: featuredArticle.author.name,
     publishedAt: featuredArticle.datePublished,
-    category: featuredArticle.category?.name || 'News',
-    imageUrl: featuredArticle.coverImage ? getImageUrl(featuredArticle.coverImage, 800, 600) : 'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=800',
-    slug: featuredArticle.slug?.current || ''
+    category: featuredArticle.category,
+    imageUrl: featuredArticle.coverImage,
+    slug: featuredArticle.slug
   } : null;
 
-  const transformedSecondaryArticles = secondaryArticles.map(article => ({
-    id: article._id,
+  const secondaryArticles = [bspArticle, ethereumArticle].filter((article): article is NonNullable<typeof article> => Boolean(article)).map(article => ({
+    id: article.id,
     title: article.title,
     excerpt: article.description,
-    author: article.author?.name || 'DailyCrypto Team',
+    author: article.author.name,
     publishedAt: article.datePublished,
-    category: article.category?.name || 'News',
-    imageUrl: article.coverImage ? getImageUrl(article.coverImage, 600, 400) : 'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=600',
-    slug: article.slug?.current || ''
+    category: article.category,
+    imageUrl: article.coverImage,
+    slug: article.slug
   }));
+
+  const transformedThirdArticle = tradingVolumeArticle ? {
+    id: tradingVolumeArticle.id,
+    title: tradingVolumeArticle.title,
+    excerpt: tradingVolumeArticle.description,
+    author: tradingVolumeArticle.author.name,
+    publishedAt: tradingVolumeArticle.datePublished,
+    category: tradingVolumeArticle.category,
+    imageUrl: tradingVolumeArticle.coverImage,
+    slug: tradingVolumeArticle.slug
+  } : null;
 
   // Transform crypto data to match hero section format
   const heroTickers = priceTickers.slice(0, 6).map((ticker) => ({
@@ -87,20 +74,12 @@ export default function ClientHomePage() {
       
       {/* Hero News Section with Enhanced Spacing */}
       <section className="w-full bg-gradient-to-b from-[var(--color-background-site)] to-[var(--color-surface)] py-4">
-        {!isLoading && transformedFeaturedArticle && (
+        {transformedFeaturedArticle && (
           <HeroNewsSection 
             featuredArticle={transformedFeaturedArticle}
-            secondaryArticles={transformedSecondaryArticles}
+            secondaryArticles={transformedThirdArticle ? [...secondaryArticles, transformedThirdArticle] : secondaryArticles}
             priceTickers={heroTickers}
           />
-        )}
-        {isLoading && (
-          <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
-            <div className="text-center py-12">
-              <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-[var(--color-text-secondary)]">Loading latest news...</p>
-            </div>
-          </div>
         )}
       </section>
       

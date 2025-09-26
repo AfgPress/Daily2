@@ -1,55 +1,16 @@
 import React from 'react';
-import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, User, Eye, ChevronRight, Star, Zap } from 'lucide-react';
-import { getNewsPosts, SanityNewsPost, getImageUrl } from '@/lib/sanity';
+import { mockNewsPosts, mockNewsEngagementData } from '@/lib/content.mock';
 import { ClientRelativeTime } from '@/components/ui/client-relative-time';
 
 export function ModernNewsGrid() {
-  const [latestArticles, setLatestArticles] = useState<SanityNewsPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch latest articles from Sanity
-  useEffect(() => {
-    const fetchArticles = async () => {
-      try {
-        const posts = await getNewsPosts(6); // Get latest 6 articles
-        setLatestArticles(posts);
-      } catch (error) {
-        console.error('Error fetching articles:', error);
-        setLatestArticles([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchArticles();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
-        <div className="text-center py-12">
-          <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[var(--color-text-secondary)]">Loading featured stories...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (latestArticles.length === 0) {
-    return (
-      <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
-        <div className="text-center py-12">
-          <p className="text-[var(--color-text-secondary)]">No articles available at the moment.</p>
-        </div>
-      </div>
-    );
-  }
+  // Get latest 6 articles for the grid
+  const latestArticles = mockNewsPosts.slice(0, 6);
 
   return (
     <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
@@ -84,11 +45,11 @@ export function ModernNewsGrid() {
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Featured Analysis */}
         {latestArticles.length > 0 && (
-          <Link href={`/news/${latestArticles[0].slug?.current}`}>
+          <Link href={`/news/${latestArticles[0].slug}`}>
             <Card className="group overflow-hidden rounded-2xl bg-[var(--color-surface)] hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-[var(--color-muted-subtle)] h-full relative">
               <div className="relative h-full min-h-[400px] overflow-hidden">
                 <Image
-                  src={latestArticles[0].coverImage ? getImageUrl(latestArticles[0].coverImage, 800, 600) : 'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=800'}
+                  src={latestArticles[0].coverImage}
                   alt={latestArticles[0].title}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -108,7 +69,7 @@ export function ModernNewsGrid() {
                 {/* Category Badge */}
                 <div className="absolute top-4 right-4">
                   <Badge className="bg-[var(--color-primary-brand)] text-white shadow-lg">
-                    {latestArticles[0].category?.name || 'News'}
+                    {latestArticles[0].category}
                   </Badge>
                 </div>
 
@@ -125,17 +86,17 @@ export function ModernNewsGrid() {
                     <div className="flex items-center space-x-3 text-white/80 text-sm">
                       <div className="flex items-center space-x-1">
                         <User className="h-4 w-4" />
-                        <span>{latestArticles[0].author?.name || 'DailyCrypto Team'}</span>
+                        <span>{latestArticles[0].author.name}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4" />
-                        <span>{latestArticles[0].readingTime || 5} min</span>
+                        <span>{latestArticles[0].readingTime} min</span>
                       </div>
                     </div>
                     
                     <div className="flex items-center space-x-1 text-white/80 text-sm">
                       <Eye className="h-4 w-4" />
-                      <span>25.0K</span>
+                      <span>{mockNewsEngagementData[latestArticles[0].id]?.views || '25.0K'}</span>
                     </div>
                   </div>
                 </div>
@@ -147,15 +108,15 @@ export function ModernNewsGrid() {
         {/* Regular Featured Stories */}
         <div className="space-y-6">
           {latestArticles.slice(1, 4).map((article) => (
-            <Link key={article._id} href={`/news/${article.slug?.current}`}>
+            <Link key={article.id} href={`/news/${article.slug}`}>
               <Card className="group overflow-hidden rounded-xl bg-[var(--color-surface)] hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-[var(--color-muted-subtle)]">
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
                     {/* Author Avatar */}
                     <div className="relative w-12 h-12 flex-shrink-0 overflow-hidden rounded-xl">
                       <Image
-                        src={article.author?.avatar ? getImageUrl(article.author.avatar, 48, 48) : 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=48'}
-                        alt={article.author?.name || 'Author'}
+                        src={article.author.avatar}
+                        alt={article.author.name}
                         fill
                         className="object-cover"
                         sizes="48px"
@@ -166,7 +127,7 @@ export function ModernNewsGrid() {
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center space-x-2">
                         <Badge variant="outline" className="text-xs">
-                          {article.category?.name || 'News'}
+                          {article.category}
                         </Badge>
                         <span className="text-xs text-[var(--color-text-secondary)]">
                           <ClientRelativeTime date={article.datePublished} />
@@ -183,14 +144,14 @@ export function ModernNewsGrid() {
                       
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3 text-xs text-[var(--color-text-secondary)]">
-                          <span>{article.author?.name || 'DailyCrypto Team'}</span>
+                          <span>{article.author.name}</span>
                           <span>•</span>
-                          <span>{article.readingTime || 5} min read</span>
+                          <span>{article.readingTime} min read</span>
                         </div>
                         
                         <div className="flex items-center space-x-2 text-xs text-[var(--color-text-secondary)]">
                           <Eye className="h-3 w-3" />
-                          <span>25.0K</span>
+                          <span>{mockNewsEngagementData[article.id]?.views || '25.0K'}</span>
                         </div>
                       </div>
                     </div>

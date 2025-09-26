@@ -10,9 +10,9 @@ import { Separator } from '@/components/ui/separator'
 import { AnimatedIndicatorNavbar } from '@/components/navbars/animated-indicator-navbar'
 import { NewsletterFooter } from '@/components/footers/newsletter-footer'
 import MarketTicker from '@/components/crypto/market-ticker'
-import { getNewsPostBySlug, getNewsPosts, getImageUrl, SanityNewsPost } from '@/lib/sanity'
+import { mockNewsPosts, latestCryptoNewsArticles } from '@/lib/content.mock'
+import { latestNewsData } from '@/lib/latest-news-data'
 import ArticleBody from '@/components/article/ArticleBody'
-import { PortableText } from '@portabletext/react'
 
 interface ArticlePageProps {
   params: Promise<{
@@ -20,38 +20,72 @@ interface ArticlePageProps {
   }>
 }
 
-// Portable Text components for rich content rendering
-const portableTextComponents = {
-  types: {
-    image: ({ value }: any) => (
-      <div className="my-8">
-        <Image
-          src={getImageUrl(value, 800, 600)}
-          alt={value.alt || 'Article image'}
-          width={800}
-          height={600}
-          className="rounded-xl shadow-lg"
-        />
-        {value.caption && (
-          <p className="text-sm text-muted-foreground text-center mt-2 italic">
-            {value.caption}
-          </p>
-        )}
-      </div>
-    ),
-  },
-  marks: {
-    link: ({ children, value }: any) => (
-      <a
-        href={value.href}
-        target={value.blank ? '_blank' : undefined}
-        rel={value.blank ? 'noopener noreferrer' : undefined}
-        className="text-primary hover:underline"
-      >
-        {children}
-      </a>
-    ),
-  },
+// Mock article data generator
+function generateArticleData(slug: string) {
+  // Search in all available article sources
+  const allArticles = [
+    ...mockNewsPosts,
+    ...latestCryptoNewsArticles,
+    ...latestNewsData.featuredArticles,
+    ...latestNewsData.smallArticles
+  ]
+  
+  const foundArticle = allArticles.find(post => post.slug === slug)
+  
+  if (!foundArticle) {
+    return null
+  }
+  
+  return {
+    id: foundArticle.id,
+    title: foundArticle.title,
+    slug: foundArticle.slug,
+    excerpt: foundArticle.description || (foundArticle as any).excerpt || (foundArticle as any).blurb || 'No description available.',
+    content: foundArticle.content || foundArticle.description || (foundArticle as any).excerpt || (foundArticle as any).blurb || '<p>Content not available.</p>',
+    author: {
+      name: foundArticle.author.name,
+      bio: foundArticle.author.bio,
+      avatar: foundArticle.author.avatar
+    },
+    publishedAt: foundArticle.datePublished,
+    category: foundArticle.category,
+    readingTime: typeof foundArticle.readingTime === 'string' 
+      ? parseInt(foundArticle.readingTime) 
+      : foundArticle.readingTime,
+    featuredImage: foundArticle.coverImage,
+    tags: foundArticle.tags || []
+  }
+}
+
+function generateRelatedArticles(currentSlug: string) {
+  const allArticles = [
+    {
+      title: 'GCash Partners with Major Crypto Exchange for Seamless Trading',
+      slug: 'gcash-crypto-partnership',
+      excerpt: 'Popular mobile wallet introduces direct cryptocurrency trading features.',
+      category: 'Technology',
+      publishedAt: '2024-01-13T09:15:00+08:00',
+      featuredImage: 'https://images.pexels.com/photos/1332313/pexels-photo-1332313.jpeg?auto=compress&cs=tinysrgb&w=800'
+    },
+    {
+      title: 'Philippine Peso Stablecoin Launches on Major Blockchain Networks',
+      slug: 'peso-stablecoin-launch',
+      excerpt: 'New PHP-backed stablecoin aims to facilitate local and international transactions.',
+      category: 'Innovation',
+      publishedAt: '2024-01-12T16:45:00+08:00',
+      featuredImage: 'https://images.pexels.com/photos/1447418/pexels-photo-1447418.jpeg?auto=compress&cs=tinysrgb&w=800'
+    },
+    {
+      title: 'Crypto Education Program Reaches 1 Million Filipinos',
+      slug: 'crypto-education-milestone',
+      excerpt: 'Government-backed initiative achieves significant outreach milestone.',
+      category: 'Education',
+      publishedAt: '2024-01-11T11:30:00+08:00',
+      featuredImage: 'https://images.pexels.com/photos/1181316/pexels-photo-1181316.jpeg?auto=compress&cs=tinysrgb&w=800'
+    }
+  ].filter(article => article.slug !== currentSlug)
+
+  return allArticles.slice(0, 3)
 }
 
 function formatDate(dateString: string): string {
@@ -65,24 +99,30 @@ function formatDate(dateString: string): string {
 }
 
 export async function generateStaticParams() {
-  try {
-    // Fetch all published news posts to generate static params
-    const posts = await getNewsPosts(100) // Get more posts for static generation
-    
-    return posts
-      .filter(post => post.slug?.current) // Only posts with valid slugs
-      .map((post) => ({
-        slug: post.slug.current
-      }))
-  } catch (error) {
-    console.error('Error generating static params:', error)
-    return [] // Return empty array if Sanity is unavailable
-  }
+  // Use Set to collect unique slugs from all data sources
+  const slugs = new Set<string>()
+  
+  // Add slugs from mockNewsPosts
+  mockNewsPosts.forEach(post => slugs.add(post.slug))
+  
+  // Add slugs from latestCryptoNewsArticles
+  latestCryptoNewsArticles.forEach(post => slugs.add(post.slug))
+  
+  // Add slugs from latestNewsData.featuredArticles
+  latestNewsData.featuredArticles.forEach(post => slugs.add(post.slug))
+  
+  // Add slugs from latestNewsData.smallArticles
+  latestNewsData.smallArticles.forEach(post => slugs.add(post.slug))
+  
+  // Convert Set to array of param objects
+  return Array.from(slugs).map((slug) => ({
+    slug: slug
+  }))
 }
 
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
   const awaitedParams = await params
-  const article = await getNewsPostBySlug(awaitedParams.slug)
+  const article = generateArticleData(awaitedParams.slug)
 
   if (!article) {
     return {
@@ -93,38 +133,33 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
   return {
     title: `${article.title} | DailyCrypto`,
-    description: article.description,
+    description: article.excerpt,
     openGraph: {
       title: article.title,
-      description: article.description,
-      images: [article.coverImage ? getImageUrl(article.coverImage, 1200, 630) : ''],
+      description: article.excerpt,
+      images: [article.featuredImage],
       type: 'article',
-      publishedTime: article.datePublished,
+      publishedTime: article.publishedAt,
       authors: [article.author.name],
     },
     twitter: {
       card: 'summary_large_image',
       title: article.title,
-      description: article.description,
-      images: [article.coverImage ? getImageUrl(article.coverImage, 1200, 630) : ''],
+      description: article.excerpt,
+      images: [article.featuredImage],
     }
   }
 }
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const awaitedParams = await params
-  const article = await getNewsPostBySlug(awaitedParams.slug)
+  const article = generateArticleData(awaitedParams.slug)
   
   if (!article) {
     notFound()
   }
   
-  // Fetch related articles from the same category
-  const relatedArticles = await getNewsPosts(3).then(posts => 
-    posts
-      .filter(post => post._id !== article._id && post.category?.name === article.category?.name)
-      .slice(0, 3)
-  )
+  const relatedArticles = generateRelatedArticles(awaitedParams.slug)
 
   const shareUrl = `https://dailycrypto.ph/news/${article.slug}`
   const shareTitle = encodeURIComponent(article.title)
@@ -161,7 +196,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           <header className="space-y-6">
             <div className="space-y-4">
               <Badge variant="secondary" className="text-xs font-medium">
-                {article.category?.name || 'News'}
+                {article.category}
               </Badge>
               
               <h1 className="text-4xl md:text-5xl font-bold leading-tight text-foreground">
@@ -169,7 +204,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               </h1>
               
               <p className="text-xl text-muted-foreground leading-relaxed">
-                {article.description}
+                {article.excerpt}
               </p>
             </div>
 
@@ -180,11 +215,11 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 <span>By {article.author.name}</span>
               </div>
               
-              <span>{formatDate(article.datePublished)}</span>
+              <span>{formatDate(article.publishedAt)}</span>
               
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                <span>{article.readingTime || 5} min read</span>
+                <span>{article.readingTime} min read</span>
               </div>
             </div>
 
@@ -234,7 +269,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           {/* Featured Image */}
           <div className="relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm">
             <Image
-              src={article.coverImage ? getImageUrl(article.coverImage, 1200, 675) : 'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=1200'}
+              src={article.featuredImage}
               alt={article.title}
               fill
               className="object-cover transition-transform duration-300 hover:scale-105"
@@ -244,18 +279,15 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
           {/* Article Content */}
           <ArticleBody>
-            {article.content && (
-              <PortableText 
-                value={article.content} 
-                components={portableTextComponents}
-              />
-            )}
+            <div 
+              dangerouslySetInnerHTML={{ __html: article.content }}
+            />
           </ArticleBody>
 
           {/* Tags */}
           <div className="flex flex-wrap gap-2 pt-6 border-t">
             <span className="text-sm font-medium">Tags:</span>
-            {(article.tags || []).map((tag) => (
+            {article.tags.map((tag) => (
               <Badge key={tag} variant="outline" className="text-xs">
                 {tag}
               </Badge>
@@ -273,7 +305,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               <div className="flex items-start gap-4">
                 <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-muted flex-shrink-0 shadow-sm">
                   <Image
-                    src={article.author?.avatar ? getImageUrl(article.author.avatar, 64, 64) : 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=64'}
+                    src={article.author.avatar}
                     alt={article.author.name}
                     fill
                     className="object-cover"
@@ -281,7 +313,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 </div>
                 <div className="space-y-2">
                   <h4 className="font-semibold text-lg">{article.author.name}</h4>
-                  <p className="text-muted-foreground">{article.author?.bio || 'Contributing writer at DailyCrypto'}</p>
+                  <p className="text-muted-foreground">{article.author.bio}</p>
                 </div>
               </div>
             </CardContent>
@@ -309,40 +341,37 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         <Separator className="my-12" />
 
         {/* Related Articles */}
-        {relatedArticles.length > 0 && (
-          <section className="space-y-6">
-            <h3 className="text-2xl font-bold">Related Articles</h3>
-            <div className="grid md:grid-cols-3 gap-6">
-              {relatedArticles.map((relatedArticle) => (
-                <Card key={relatedArticle._id} className="group hover:shadow-md transition-shadow">
-                  <div className="relative aspect-video rounded-t-xl overflow-hidden">
-                    <Image
-                      src={relatedArticle.coverImage ? getImageUrl(relatedArticle.coverImage, 400, 225) : 'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=400'}
-                      alt={relatedArticle.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                    />
+        <section className="space-y-6">
+          <h3 className="text-2xl font-bold">Related Articles</h3>
+          <div className="grid md:grid-cols-3 gap-6">
+            {relatedArticles.map((relatedArticle) => (
+              <Card key={relatedArticle.slug} className="group hover:shadow-md transition-shadow">
+                <div className="relative aspect-video rounded-t-xl overflow-hidden">
+                  <Image
+                    src={relatedArticle.featuredImage}
+                    alt={relatedArticle.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <Badge variant="secondary">{relatedArticle.category}</Badge>
+                    <span>{formatDate(relatedArticle.publishedAt)}</span>
                   </div>
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <Badge variant="secondary">{relatedArticle.category?.name || 'News'}</Badge>
-                      <span>{formatDate(relatedArticle.datePublished)}</span>
-                    </div>
-                    <Link href={`/news/${relatedArticle.slug.current}`}>
-                      <h4 className="font-semibold group-hover:text-primary transition-colors line-clamp-2">
-                        {relatedArticle.title}
-                      </h4>
-                    </Link>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {relatedArticle.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-        )}
+                  <Link href={`/news/${relatedArticle.slug}`}>
+                    <h4 className="font-semibold group-hover:text-primary transition-colors line-clamp-2">
+                      {relatedArticle.title}
+                    </h4>
+                  </Link>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {relatedArticle.excerpt}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
 
         <Separator className="my-12" />
 
